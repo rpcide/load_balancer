@@ -10,12 +10,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: "*",
+    origin: process.env.ORIGINS || "*",
   })
 );
 
 const PORT = process.env.PORT || 8080;
 const SERVERS = process.env.SERVERS.split(",") || [];
+const SERVERS_LOAD = SERVERS.map((server) => {
+  return { name: server, count: 0 };
+});
 
 let current = 0;
 
@@ -30,6 +33,7 @@ function newAbortSignal(timeoutMs) {
 const handler = async (code, language, input, res) => {
   const server = SERVERS[current];
 
+  SERVERS_LOAD[current].count += 1;
   current === SERVERS.length - 1 ? (current = 0) : current++;
 
   console.log("Using server: " + server);
@@ -49,7 +53,7 @@ const handler = async (code, language, input, res) => {
     res.json(response.data);
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Server error!!" });
+    res.status(500).json({ error: "Server error", timestamp: Date.now() });
   }
 };
 
@@ -64,6 +68,10 @@ app.get("/servers", (_, res) => {
 app.post("/submit", (req, res) => {
   const { code, language, input } = req.body;
   return handler(code, language, input, res);
+});
+
+app.get("/load", (_, res) => {
+  res.json({ SERVERS_LOAD });
 });
 
 app.listen(PORT, () => {
