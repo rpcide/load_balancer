@@ -22,7 +22,7 @@ const SERVERS_LOAD = SERVERS.map((server) => {
 
 let current = 0;
 
-const ABORT_TIME_OUT = 5000;
+const ABORT_TIME_OUT = process.env.ABORT_TIME_OUT * 1000 || 5000;
 
 function newAbortSignal(timeoutMs) {
   const abortController = new AbortController();
